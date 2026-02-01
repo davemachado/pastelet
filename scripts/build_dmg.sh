@@ -4,9 +4,6 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$DIR/.."
 BUILD_DIR="$PROJECT_ROOT/build"
-ARCHIVE_PATH="$BUILD_DIR/Pastelet.xcarchive"
-EXPORT_PATH="$BUILD_DIR/Export"
-PLIST_PATH="$DIR/ExportOptions.plist"
 DMG_PATH="$BUILD_DIR/Pastelet.dmg"
 
 # 0. Check for version argument
@@ -32,22 +29,29 @@ echo "Cleaning build directory..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
-echo "Archiving project..."
-# xcodebuild archive
-xcodebuild archive \
+echo "Building project (Ad-Hoc)..."
+# Build directly with local signing (no account required)
+xcodebuild build \
     -project "$PROJECT_ROOT/Pastelet.xcodeproj" \
     -scheme "Pastelet" \
-    -archivePath "$ARCHIVE_PATH" \
     -configuration Release \
+    -derivedDataPath "$BUILD_DIR" \
     -destination 'generic/platform=macOS' \
+    CODE_SIGN_IDENTITY="-" \
+    CODE_SIGN_STYLE="Manual" \
+    PROVISIONING_PROFILE_SPECIFIER="" \
     -quiet
 
-echo "Exporting archive..."
-xcodebuild -exportArchive \
-    -archivePath "$ARCHIVE_PATH" \
-    -exportOptionsPlist "$PLIST_PATH" \
-    -exportPath "$EXPORT_PATH" \
-    -quiet
+# Location of the built app
+APP_PATH="$BUILD_DIR/Build/Products/Release/Pastelet.app"
+
+if [ ! -d "$APP_PATH" ]; then
+    echo "Error: App not found at $APP_PATH"
+    exit 1
+fi
+
+echo "Force signing application..."
+codesign --force --deep --sign "-" "$APP_PATH"
 
 echo "Creating DMG..."
 rm -f "$DMG_PATH"
@@ -61,7 +65,7 @@ create-dmg \
   --hide-extension "Pastelet.app" \
   --app-drop-link 425 190 \
   "$DMG_PATH" \
-  "$EXPORT_PATH/Pastelet.app"
+  "$APP_PATH"
 
 echo "DMG created successfully: $DMG_PATH"
 open "$BUILD_DIR"

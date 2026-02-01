@@ -17,8 +17,15 @@
 
 ## Installation
 
-Currently, Pastelet is available by building from source:
+### Option 1: Download Release
+1.  Download the latest DMG from the [Releases](https://github.com/yourusername/Pastelet/releases) page.
+2.  Open the DMG and drag **Pastelet** to your Applications folder.
+3.  **Important**: Since this is an open-source build without a paid Apple Developer ID, you may see a warning that the app is from an "Unidentified Developer".
+    *   To open it: **Right-click** the app and select **Open**.
+    *   Click **Open** again in the dialog.
+    *   You only need to do this once.
 
+### Option 2: Build from Source
 1.  Clone the repository:
     ```bash
     git clone https://github.com/yourusername/Pastelet.git
@@ -26,8 +33,6 @@ Currently, Pastelet is available by building from source:
     ```
 2.  Open `Pastelet.xcodeproj` in Xcode.
 3.  Build and Run (Cmd + R).
-
-*Note: Ensure you have a valid signing identity if you plan to archive and export the application.*
 
 ## Usage
 
