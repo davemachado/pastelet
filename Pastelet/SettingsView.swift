@@ -26,12 +26,22 @@ struct SettingsView: View {
 struct GeneralSettingsView: View {
     @ObservedObject var clipboardManager: ClipboardManager
     @ObservedObject var snippetManager: SnippetManager
+    @StateObject private var launchAtLoginManager = LaunchAtLoginManager()
     @State private var showingResetAlert = false
     
     var body: some View {
         Form {
             Section {
                 VStack(alignment: .leading, spacing: 10) {
+                    Toggle("Launch at Login", isOn: Binding(
+                        get: { launchAtLoginManager.isEnabled },
+                        set: { launchAtLoginManager.setEnabled($0) }
+                    ))
+                    .controlSize(.large)
+                    
+                    Divider()
+                        .padding(.vertical, 8)
+
                     Text("Application Reset")
                         .font(.headline)
                     Text("Resetting the application will delete all custom snippets and clear your clipboard history. This action cannot be undone.")
