@@ -74,8 +74,12 @@ class ClipboardManager: ObservableObject {
         saveHistory()
     }
     
+    
     private func loadHistory() {
         if let data = UserDefaults.standard.data(forKey: storageKey) {
+            // Check if key exists (before getOrGenerateKey potentially makes a new one)
+            let keyExists = encryptionService.hasKeyInKeychain()
+            
             // 1. Try Decrypting (New Path)
             if let decrypted = encryptionService.decrypt(data),
                let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: decrypted) {
@@ -87,8 +91,31 @@ class ClipboardManager: ObservableObject {
             if let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
                 print("Loaded legacy plaintext history. Will define migration on next save.")
                 history = decoded
+                return
+            }
+            
+            // 3. Failure Scenario
+            if !keyExists {
+                // We have data, but no key to decrypt it, and it wasn't plaintext.
+                // This means the key was lost/deleted.
+                print("Encryption key missing. History is unreadable.")
+                DispatchQueue.main.async {
+                    self.showMissingKeyAlert()
+                }
             }
         }
+    }
+    
+    private func showMissingKeyAlert() {
+        // Bring app to front so alert is visible
+        NSApp.activate(ignoringOtherApps: true)
+        
+        let alert = NSAlert()
+        alert.messageText = "Encryption Key Missing"
+        alert.informativeText = "Your clipboard history has been reset because the encryption key could not be found in your Keychain."
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
     
     private func saveHistory() {

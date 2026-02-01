@@ -10,8 +10,7 @@ class EncryptionService {
     private let keychainLabel = "Pastelet Encryption Key"
     
     init() {
-        // Attempt to load key on init
-        _ = getOrGenerateKey()
+        // Do not auto-generate key here, let usage determine valid state
     }
     
     func encrypt(_ data: Data) -> Data? {
