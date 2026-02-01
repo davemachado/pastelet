@@ -3,10 +3,10 @@ import CryptoKit
 import Security
 
 class EncryptionService {
-    private let keychainTag = "drm.Pastelet.encryptionKey"
+    private let keychainTag = "davemachado.Pastelet.encryptionKey"
     private var cachedKey: SymmetricKey?
     
-    private let keychainService = "drm.Pastelet"
+    private let keychainService = "davemachado.Pastelet"
     private let keychainLabel = "Pastelet Encryption Key"
     
     init() {
