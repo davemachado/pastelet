@@ -134,9 +134,27 @@ class AppWindowManager: NSObject, ObservableObject {
                 let subnet = NSMenu(title: folderTitle)
                 
                 for (index, item) in history[chunkStart..<chunkEnd].enumerated() {
-                    let text = item.content.replacingOccurrences(of: "\n", with: " ")
                     let displayIndex = chunkStart + index
-                    let displayTitle = "\(displayIndex). " + (text.count > 40 ? String(text.prefix(40)) + "..." : text)
+                    
+                    var displayTitle = ""
+                    var image: NSImage? = nil
+                    
+                    if item.type == .image {
+                        displayTitle = "\(displayIndex). Captured Image"
+                        if let id = item.imageID,
+                           let loadedImage = ImageStorageService().loadImage(id: id) {
+                            // Resize for menu icon (approx 20x20 usually good for menu items)
+                            let size = NSSize(width: 20, height: 20)
+                            let resized = NSImage(size: size)
+                            resized.lockFocus()
+                            loadedImage.draw(in: NSRect(origin: .zero, size: size))
+                            resized.unlockFocus()
+                            image = resized
+                        }
+                    } else {
+                        let text = item.content.replacingOccurrences(of: "\n", with: " ")
+                        displayTitle = "\(displayIndex). " + (text.count > 40 ? String(text.prefix(40)) + "..." : text)
+                    }
                     
                     var keyEquiv = ""
                     var modifier: NSEvent.ModifierFlags = []
@@ -147,6 +165,9 @@ class AppWindowManager: NSObject, ObservableObject {
                     }
                     
                     let menuItem = NSMenuItem(title: displayTitle, action: #selector(pasteItem(_:)), keyEquivalent: keyEquiv)
+                    if let img = image {
+                        menuItem.image = img
+                    }
                     if !modifier.isEmpty {
                         menuItem.keyEquivalentModifierMask = modifier
                     }
@@ -198,18 +219,18 @@ class AppWindowManager: NSObject, ObservableObject {
     
     @objc func pasteItem(_ sender: NSMenuItem) {
         if let item = sender.representedObject as? ClipboardItem {
-            PasteHelper.paste(item: item)
+            PasteHelper.paste(item: item, manager: clipboardManager)
         }
     }
     
     @objc func pasteSnippet(_ sender: NSMenuItem) {
         if let snippet = sender.representedObject as? Snippet {
             let item = ClipboardItem(content: snippet.content, date: Date())
-            PasteHelper.paste(item: item)
+            PasteHelper.paste(item: item, manager: clipboardManager)
         }
     }
     
     @objc func clearHistory() {
-        clipboardManager.history.removeAll()
+        clipboardManager.clearHistory()
     }
 }

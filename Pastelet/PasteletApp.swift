@@ -43,9 +43,13 @@ struct PasteletMenuView: View {
         // Show recent history (limit to top 15)
         ForEach(clipboardManager.history.prefix(15)) { item in
             Button {
-                PasteHelper.paste(item: item)
+                PasteHelper.paste(item: item, manager: clipboardManager)
             } label: {
-                Text(item.content.prefix(30) + (item.content.count > 30 ? "..." : ""))
+                if item.type == .image, let id = item.imageID {
+                    ImageLabel(imageID: id)
+                } else {
+                    Text(item.content.prefix(30) + (item.content.count > 30 ? "..." : ""))
+                }
             }
         }
         
@@ -59,11 +63,36 @@ struct PasteletMenuView: View {
         }
         
         Button("Clear History") {
-            clipboardManager.history.removeAll()
+            clipboardManager.clearHistory()
         }
         Divider()
         Button("Quit") {
             NSApplication.shared.terminate(nil)
+        }
+    }
+}
+
+
+struct ImageLabel: View {
+    let imageID: UUID
+    @State private var image: NSImage?
+    
+    var body: some View {
+        HStack {
+            if let image = image {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+            } else {
+                Image(systemName: "photo")
+            }
+            Text("Captured Image")
+        }
+        .onAppear {
+            if let loaded = ImageStorageService().loadImage(id: imageID) {
+                self.image = loaded
+            }
         }
     }
 }

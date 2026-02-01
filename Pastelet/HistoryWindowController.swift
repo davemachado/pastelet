@@ -12,7 +12,7 @@ class HistoryWindowController: NSWindowController {
         let contentView = HistoryView(
             clipboardManager: clipboardManager,
             onSelect: { item in
-                PasteHelper.paste(item: item)
+                PasteHelper.paste(item: item, manager: clipboardManager)
                 // We don't close immediately here because PasteHelper hides the app, 
                 // effectively closing the window's visual prominence, but we should clear state.
                 // Actually, PasteHelper logic hides the app.

@@ -54,10 +54,28 @@ struct HistoryRow: View {
     
     var body: some View {
         HStack {
-            Text(item.content)
-                .lineLimit(1)
-                .font(.system(size: 14))
-                .foregroundStyle(isSelected ? .white : .primary)
+            if item.type == .image, let imageID = item.imageID {
+                // Image Thumbnail
+                if let image = ImageStorageService().loadImage(id: imageID) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 30)
+                        .cornerRadius(4)
+                } else {
+                     Image(systemName: "photo")
+                        .foregroundStyle(isSelected ? .white : .secondary)
+                }
+                
+                Text("Image")
+                    .font(.system(size: 14))
+                    .foregroundStyle(isSelected ? .white : .primary)
+            } else {
+                Text(item.content)
+                    .lineLimit(1)
+                    .font(.system(size: 14))
+                    .foregroundStyle(isSelected ? .white : .primary)
+            }
             
             Spacer()
             

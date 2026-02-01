@@ -2,11 +2,20 @@ import Cocoa
 import ApplicationServices
 
 class PasteHelper {
-    static func paste(item: ClipboardItem) {
+    static func paste(item: ClipboardItem, manager: ClipboardManager) {
         // 1. Set Clipboard Content
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString(item.content, forType: .string)
+        
+        if item.type == .image, let imageID = item.imageID,
+           let image = ImageStorageService().loadImage(id: imageID) {
+            pasteboard.writeObjects([image])
+        } else {
+            pasteboard.setString(item.content, forType: .string)
+        }
+        
+        // Sync change count to avoid self-triggering
+        manager.updateChangeCount()
         
         // 2. Hide our app (so focus returns to previous app)
         NSApp.hide(nil)

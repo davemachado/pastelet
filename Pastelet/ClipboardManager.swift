@@ -1,14 +1,24 @@
 import Cocoa
 import Combine
 
+enum ItemType: String, Codable {
+    case text
+    case image
+}
+
 struct ClipboardItem: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
-    let content: String
+    let content: String // Text preview or placeholder
     let date: Date
-    // Future: appBundleIdentifier, type (image/text)
+    var type: ItemType = .text
+    var imageID: UUID?
     
     // Equatable to prevent duplicates
     static func == (lhs: ClipboardItem, rhs: ClipboardItem) -> Bool {
+        if lhs.type != rhs.type { return false }
+        if lhs.type == .image {
+            return lhs.imageID == rhs.imageID
+        }
         return lhs.content == rhs.content
     }
 }
@@ -24,6 +34,7 @@ class ClipboardManager: ObservableObject {
     private let storageKey = "ClipboardHistory"
     
     private let encryptionService = EncryptionService()
+    private let imageStorageService = ImageStorageService()
     
     init() {
         self.lastChangeCount = pasteboard.changeCount
@@ -42,18 +53,33 @@ class ClipboardManager: ObservableObject {
         if pasteboard.changeCount != lastChangeCount {
             lastChangeCount = pasteboard.changeCount
             
-            // For now, only handle plain text
+            // 1. Check for Image
+            if let image = NSImage(pasteboard: pasteboard) {
+                // Save image
+                if let imageID = imageStorageService.saveImage(image) {
+                     let newItem = ClipboardItem(
+                        content: "Image",
+                        date: Date(),
+                        type: .image,
+                        imageID: imageID
+                    )
+                    addItem(newItem)
+                }
+                return
+            }
+            
+            // 2. Check for Text (Fallback)
             if let newString = pasteboard.string(forType: .string) {
                 // Avoid capturing own paste action if possible (complex)
                 // or just debounce.
                 // Or simply add.
                 
                 // Avoid adding duplicate of the *most recent* item
-                if let last = history.first, last.content == newString {
+                if let last = history.first, last.type == .text, last.content == newString {
                     return
                 }
                 
-                let newItem = ClipboardItem(content: newString, date: Date())
+                let newItem = ClipboardItem(content: newString, date: Date(), type: .text)
                 addItem(newItem)
             }
         }
@@ -61,14 +87,22 @@ class ClipboardManager: ObservableObject {
     
     private func addItem(_ item: ClipboardItem) {
         // Remove duplicate if it exists elsewhere
-        history.removeAll { $0.content == item.content }
+        history.removeAll { 
+            if $0.type == .image, let id1 = $0.imageID, let id2 = item.imageID {
+                 return id1 == id2
+            }
+            return $0.content == item.content 
+        }
         
         // Insert at top
         history.insert(item, at: 0)
         
         // Cap size
         if history.count > maxHistorySize {
-            history.removeLast()
+            let removed = history.removeLast()
+            if removed.type == .image, let id = removed.imageID {
+                imageStorageService.deleteImage(id: id)
+            }
         }
         
         saveHistory()
@@ -136,6 +170,7 @@ class ClipboardManager: ObservableObject {
     
     func clearHistory() {
         history.removeAll()
+        imageStorageService.deleteAllImages()
         saveHistory()
     }
     
@@ -145,5 +180,9 @@ class ClipboardManager: ObservableObject {
             saveHistory()
             print("Encryption key rotated and history re-saved.")
         }
+    }
+    
+    func updateChangeCount() {
+        lastChangeCount = pasteboard.changeCount
     }
 }
