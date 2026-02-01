@@ -13,12 +13,15 @@ struct PasteletApp: App {
     
     // Global Managers
     @StateObject var clipboardManager = ClipboardManager()
+    @StateObject var snippetManager = SnippetManager()
     @StateObject var windowManager: AppWindowManager
     
     init() {
         let cbManager = ClipboardManager()
+        let snipManager = SnippetManager()
         _clipboardManager = StateObject(wrappedValue: cbManager)
-        _windowManager = StateObject(wrappedValue: AppWindowManager(clipboardManager: cbManager))
+        _snippetManager = StateObject(wrappedValue: snipManager)
+        _windowManager = StateObject(wrappedValue: AppWindowManager(clipboardManager: cbManager, snippetManager: snipManager))
     }
     
     var body: some Scene {
@@ -36,6 +39,10 @@ struct PasteletApp: App {
                 Divider()
             }
             
+            SettingsLink {
+                Text("Settings...")
+            }
+            
             Button("Clear History") {
                 clipboardManager.history.removeAll()
             }
@@ -43,6 +50,10 @@ struct PasteletApp: App {
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }
+        }
+        
+        Settings {
+            SettingsView(snippetManager: snippetManager)
         }
     }
 }

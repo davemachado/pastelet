@@ -6,13 +6,14 @@ import Combine
 class AppWindowManager: NSObject, ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let clipboardManager: ClipboardManager
+    private let snippetManager: SnippetManager
     
-    // We still manage the permissions window here
+    // Window Controllers
     private var permissionsWindowController: NSWindowController?
 
-    init(clipboardManager: ClipboardManager) {
+    init(clipboardManager: ClipboardManager, snippetManager: SnippetManager) {
         self.clipboardManager = clipboardManager
-        // Initialize NSObject superclass
+        self.snippetManager = snippetManager
         super.init()
         
         // Check permissions on launch
@@ -67,7 +68,7 @@ class AppWindowManager: NSObject, ObservableObject {
         // Trigger the native Context Menu popup
         popUpHistoryMenu()
     }
-
+    
     private func getCaretRect() -> CGRect? {
         let systemWide = AXUIElementCreateSystemWide()
         var focusedElement: AnyObject?
@@ -103,8 +104,8 @@ class AppWindowManager: NSObject, ObservableObject {
         
         if let caretRect = getCaretRect() {
             if let primaryScreen = NSScreen.screens.first {
-                let screenHeight = primaryScreen.frame.height
-                let correctedY = screenHeight - (caretRect.origin.y + caretRect.height)
+                // Caret Y is from top. Cocoa Y = ScreenHeight - (CaretTop + CaretHeight)
+                let correctedY = primaryScreen.frame.height - (caretRect.origin.y + caretRect.height)
                 location = NSPoint(x: caretRect.origin.x, y: correctedY - 5)
             }
         }
@@ -112,6 +113,7 @@ class AppWindowManager: NSObject, ObservableObject {
         // 2. Build Menu
         let menu = NSMenu(title: "Clipboard History")
         
+        // --- HISTORY SECTION ---
         let history = clipboardManager.history
         
         if history.isEmpty {
@@ -120,7 +122,6 @@ class AppWindowManager: NSObject, ObservableObject {
              menu.addItem(item)
         } else {
             // Chunk into groups of 10
-            // We'll show up to 100 items (10 groups)
             let maxItems = min(history.count, 100)
             let chunkSize = 10
             
@@ -129,22 +130,14 @@ class AppWindowManager: NSObject, ObservableObject {
                 let chunkRange = chunkStart..<chunkEnd
                 let folderTitle = "History \(chunkStart) - \(chunkEnd - 1)"
                 
-                // Create the Folder Item
                 let folderItem = NSMenuItem(title: folderTitle, action: nil, keyEquivalent: "")
-                
-                // Create the Submenu
                 let subnet = NSMenu(title: folderTitle)
                 
-                for (index, item) in history[chunkRange].enumerated() {
-                    // Flatten newlines and truncate
+                for (index, item) in history[chunkStart..<chunkEnd].enumerated() {
                     let text = item.content.replacingOccurrences(of: "\n", with: " ")
-                    // Include the index prefix 0...9 for clarity
                     let displayIndex = chunkStart + index
-                    let truncatedText = text.count > 40 ? String(text.prefix(40)) + "..." : text
-                    let displayTitle = "\(displayIndex). \(truncatedText)"
+                    let displayTitle = "\(displayIndex). " + (text.count > 40 ? String(text.prefix(40)) + "..." : text)
                     
-                    // Determine Hotkey (Only for the first 10 items 0-9)
-                    // 0 -> Cmd+0, 1 -> Cmd+1...
                     var keyEquiv = ""
                     var modifier: NSEvent.ModifierFlags = []
                     
@@ -163,30 +156,55 @@ class AppWindowManager: NSObject, ObservableObject {
                     subnet.addItem(menuItem)
                 }
                 
-                // Attach submenu to folder
                 folderItem.submenu = subnet
                 menu.addItem(folderItem)
             }
         }
         
+        // --- SNIPPETS SECTION ---
+        menu.addItem(NSMenuItem.separator())
+        let snippetsHeader = NSMenuItem(title: "Snippets", action: nil, keyEquivalent: "")
+        snippetsHeader.isEnabled = false
+        menu.addItem(snippetsHeader)
+        
+        for folder in snippetManager.folders {
+            let folderItem = NSMenuItem(title: folder.title, action: nil, keyEquivalent: "")
+            let subnet = NSMenu(title: folder.title)
+            
+            for snippet in folder.snippets {
+                 let menuItem = NSMenuItem(title: snippet.title, action: #selector(pasteSnippet(_:)), keyEquivalent: "")
+                 menuItem.target = self
+                 menuItem.representedObject = snippet
+                 subnet.addItem(menuItem)
+            }
+            folderItem.submenu = subnet
+            menu.addItem(folderItem)
+        }
+        
+        // Edit Snippets Option REMOVED (Moved to Settings Window)
+        
+        // --- FOOTER SECTION ---
         menu.addItem(NSMenuItem.separator())
         let clearItem = NSMenuItem(title: "Clear History", action: #selector(clearHistory), keyEquivalent: "")
         clearItem.target = self
         menu.addItem(clearItem)
         
-        // 3. Activate App
+        // 3. Activate App & Pop Up
         NSApp.activate(ignoringOtherApps: true)
-        // 4. Pop Up
-        // Pop up the menu at the calculated or fallback location
-        // popUp returns true if an item was selected, false if dismissed.
         if !menu.popUp(positioning: nil, at: location, in: nil) {
-            // If user cancelled (clicked outside/Escape), return focus to previous app immediately.
             NSApp.hide(nil)
         }
     }
     
     @objc func pasteItem(_ sender: NSMenuItem) {
         if let item = sender.representedObject as? ClipboardItem {
+            PasteHelper.paste(item: item)
+        }
+    }
+    
+    @objc func pasteSnippet(_ sender: NSMenuItem) {
+        if let snippet = sender.representedObject as? Snippet {
+            let item = ClipboardItem(content: snippet.content, date: Date())
             PasteHelper.paste(item: item)
         }
     }
