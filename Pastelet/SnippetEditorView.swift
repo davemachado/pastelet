@@ -5,7 +5,7 @@ struct SnippetEditorView: View {
     @State private var selection: UUID?
     
     var body: some View {
-        NavigationSplitView {
+        HSplitView {
             // Sidebar: Folders
             VStack(spacing: 0) {
                 List(selection: $selection) {
@@ -32,7 +32,7 @@ struct SnippetEditorView: View {
                 HStack(spacing: 0) {
                     Button(action: addFolder) {
                         Image(systemName: "plus")
-                            .frame(width: 32, height: 28)
+                        .frame(width: 32, height: 28)
                     }
                     .buttonStyle(.borderless)
                     
@@ -40,7 +40,7 @@ struct SnippetEditorView: View {
                     
                     Button(action: deleteSelectedFolder) {
                         Image(systemName: "minus")
-                            .frame(width: 32, height: 28)
+                        .frame(width: 32, height: 28)
                     }
                     .buttonStyle(.borderless)
                     .disabled(selection == nil)
@@ -50,13 +50,16 @@ struct SnippetEditorView: View {
                 .frame(height: 29)
                 .background(Color(NSColor.controlBackgroundColor))
             }
-            .navigationTitle("Folders")
-        } detail: {
+            .frame(minWidth: 200, maxWidth: 250) // Explicit width constraints for sidebar behavior
+            
+            // Detail View
             if let sel = selection, let index = manager.folders.firstIndex(where: { $0.id == sel }) {
                 SnippetFolderDetailView(folder: $manager.folders[index])
+                    .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Text("Select a Folder to Edit")
                     .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
     }
