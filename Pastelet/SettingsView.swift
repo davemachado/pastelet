@@ -134,8 +134,9 @@ struct ExclusionSettingsView: View {
                     }
                     
                     ForEach(Array(manager.excludedBundleIDs).sorted(), id: \.self) { bundleID in
+                        let info = getAppInfo(for: bundleID)
                         HStack {
-                            if let app = runningApps.first(where: { $0.id == bundleID }), let icon = app.icon {
+                            if let icon = info.icon {
                                 Image(nsImage: icon)
                                     .resizable()
                                     .frame(width: 16, height: 16)
@@ -143,8 +144,7 @@ struct ExclusionSettingsView: View {
                                 Image(systemName: "app.dashed")
                             }
                             
-                            // Try to find name, otherwise show ID
-                            Text(runningApps.first(where: { $0.id == bundleID })?.name ?? bundleID)
+                            Text(info.name)
                             Spacer()
                             Button {
                                 manager.removeExclusion(bundleID)
@@ -227,5 +227,32 @@ struct ExclusionSettingsView: View {
                 }
             }
         }
+    }
+    
+    // Helper to get icon/name even if app is closed
+    func getAppInfo(for bundleID: String) -> (name: String, icon: NSImage?) {
+        // 1. Check running apps first (faster)
+        if let app = runningApps.first(where: { $0.id == bundleID }) {
+            return (app.name, app.icon)
+        }
+        
+        // 2. Resolve from disk
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            let icon = NSWorkspace.shared.icon(forFile: url.path)
+            
+            // Try to get localized name
+            var name = url.deletingPathExtension().lastPathComponent
+            if let bundle = Bundle(url: url),
+               let displayName = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String {
+                name = displayName
+            } else if let bundle = Bundle(url: url),
+               let bundleName = bundle.object(forInfoDictionaryKey: "CFBundleName") as? String {
+                name = bundleName
+            }
+            
+            return (name, icon)
+        }
+        
+        return (bundleID, nil)
     }
 }
