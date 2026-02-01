@@ -85,7 +85,7 @@ class AppWindowManager: NSObject, ObservableObject {
         
         // 3. Get Bounds for that Range
         var boundsValue: AnyObject?
-        let boundsResult = AXUIElementCopyParameterizedAttributeValue(axElement, kAXBoundsForRangeParameterizedAttribute as CFString, range as! CFTypeRef, &boundsValue)
+        let boundsResult = AXUIElementCopyParameterizedAttributeValue(axElement, kAXBoundsForRangeParameterizedAttribute as CFString, range, &boundsValue)
         
         if boundsResult == .success, let boundsVal = boundsValue {
              // 4. Unwrap AXValue to CGRect
@@ -127,7 +127,7 @@ class AppWindowManager: NSObject, ObservableObject {
             
             for chunkStart in stride(from: 0, to: maxItems, by: chunkSize) {
                 let chunkEnd = min(chunkStart + chunkSize, maxItems)
-                let chunkRange = chunkStart..<chunkEnd
+
                 let folderTitle = "History \(chunkStart) - \(chunkEnd - 1)"
                 
                 let folderItem = NSMenuItem(title: folderTitle, action: nil, keyEquivalent: "")

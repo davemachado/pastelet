@@ -5,22 +5,21 @@ struct SnippetEditorView: View {
     @State private var selection: UUID?
     
     var body: some View {
-        NavigationView {
+        NavigationSplitView {
             // Sidebar: Folders
             VStack(spacing: 0) {
                 List(selection: $selection) {
                     ForEach($manager.folders) { $folder in
-                        NavigationLink(destination: SnippetFolderDetailView(folder: $folder), tag: folder.id, selection: $selection) {
-                            TextField("Folder Name", text: $folder.title)
-                                .textFieldStyle(.plain)
-                        }
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                deleteFolder(folder)
-                            } label: {
-                                Label("Delete Folder", systemImage: "trash")
+                        TextField("Folder Name", text: $folder.title)
+                            .textFieldStyle(.plain)
+                            .tag(folder.id)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    deleteFolder(folder)
+                                } label: {
+                                    Label("Delete Folder", systemImage: "trash")
+                                }
                             }
-                        }
                     }
                     .onDelete { indices in
                         manager.folders.remove(atOffsets: indices)
@@ -52,10 +51,13 @@ struct SnippetEditorView: View {
                 .background(Color(NSColor.controlBackgroundColor))
             }
             .navigationTitle("Folders")
-            
-            // Default Detail View
-            Text("Select a Folder to Edit")
-                .foregroundColor(.secondary)
+        } detail: {
+            if let sel = selection, let index = manager.folders.firstIndex(where: { $0.id == sel }) {
+                SnippetFolderDetailView(folder: $manager.folders[index])
+            } else {
+                Text("Select a Folder to Edit")
+                    .foregroundColor(.secondary)
+            }
         }
     }
     
