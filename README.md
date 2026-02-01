@@ -18,7 +18,7 @@
 ## Installation
 
 ### Option 1: Download Release
-1.  Download the latest DMG from the [Releases](https://github.com/yourusername/Pastelet/releases) page.
+1.  Download the latest DMG from the [Releases](https://github.com/davemachado/Pastelet/releases) page.
 2.  Open the DMG and drag **Pastelet** to your Applications folder.
 3.  **Important**: Since this is an open-source build without a paid Apple Developer ID, you may see a warning that the app is from an "Unidentified Developer".
     *   To open it: **Right-click** the app and select **Open**.
@@ -28,7 +28,7 @@
 ### Option 2: Build from Source
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/Pastelet.git
+    git clone https://github.com/davemachado/Pastelet.git
     cd Pastelet
     ```
 2.  Open `Pastelet.xcodeproj` in Xcode.
