@@ -23,6 +23,8 @@ class ClipboardManager: ObservableObject {
     private let maxHistorySize = 50
     private let storageKey = "ClipboardHistory"
     
+    private let encryptionService = EncryptionService()
+    
     init() {
         self.lastChangeCount = pasteboard.changeCount
         loadHistory()
@@ -74,7 +76,16 @@ class ClipboardManager: ObservableObject {
     
     private func loadHistory() {
         if let data = UserDefaults.standard.data(forKey: storageKey) {
+            // 1. Try Decrypting (New Path)
+            if let decrypted = encryptionService.decrypt(data),
+               let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: decrypted) {
+                history = decoded
+                return
+            }
+            
+            // 2. Fallback: Try Legacy Plaintext
             if let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+                print("Loaded legacy plaintext history. Will define migration on next save.")
                 history = decoded
             }
         }
@@ -82,7 +93,10 @@ class ClipboardManager: ObservableObject {
     
     private func saveHistory() {
         if let encoded = try? JSONEncoder().encode(history) {
-            UserDefaults.standard.set(encoded, forKey: storageKey)
+            // 3. Encrypt before saving
+            if let encrypted = encryptionService.encrypt(encoded) {
+                UserDefaults.standard.set(encrypted, forKey: storageKey)
+            }
         }
     }
     
@@ -96,5 +110,13 @@ class ClipboardManager: ObservableObject {
     func clearHistory() {
         history.removeAll()
         saveHistory()
+    }
+    
+    func rotateEncryptionKey() {
+        if encryptionService.regenerateKey() {
+            // Re-save current in-memory history with new key
+            saveHistory()
+            print("Encryption key rotated and history re-saved.")
+        }
     }
 }

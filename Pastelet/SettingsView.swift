@@ -28,6 +28,7 @@ struct GeneralSettingsView: View {
     @ObservedObject var snippetManager: SnippetManager
     @StateObject private var launchAtLoginManager = LaunchAtLoginManager()
     @State private var showingResetAlert = false
+    @State private var showingKeyRotationAlert = false
     
     var body: some View {
         Form {
@@ -37,6 +38,21 @@ struct GeneralSettingsView: View {
                         get: { launchAtLoginManager.isEnabled },
                         set: { launchAtLoginManager.setEnabled($0) }
                     ))
+                    .controlSize(.large)
+                    
+                    Divider()
+                        .padding(.vertical, 8)
+                        
+                    Text("Security")
+                        .font(.headline)
+                        
+                    Text("Your clipboard history is encrypted using a key stored in your Keychain. You can regenerate this key if needed.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Button("Regenerate Encryption Key") {
+                        showingKeyRotationAlert = true
+                    }
                     .controlSize(.large)
                     
                     Divider()
@@ -68,6 +84,14 @@ struct GeneralSettingsView: View {
             }
         } message: {
             Text("Are you sure? All your snippets and history will be permanently deleted.")
+        }
+        .alert("Regenerate Key?", isPresented: $showingKeyRotationAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Regenerate", role: .destructive) {
+                clipboardManager.rotateEncryptionKey()
+            }
+        } message: {
+            Text("This will generate a new encryption key and re-encrypt your current history. Previous backups if any may become unreadable.")
         }
     }
 }
