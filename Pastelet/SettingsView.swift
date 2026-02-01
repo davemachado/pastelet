@@ -98,9 +98,13 @@ struct GeneralSettingsView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     #else
-                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    VStack(spacing: 4) {
+                        Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"))")
+                            .foregroundColor(.secondary)
+
+                        Link("github.com/davemachado/pastelet", destination: URL(string: "https://github.com/davemachado/pastelet")!)
+                    }
+                    .font(.caption)
                     #endif
                     Spacer()
                 }
