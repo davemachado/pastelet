@@ -80,6 +80,32 @@ struct GeneralSettingsView: View {
                 }
                 .padding(.vertical, 8)
             }
+
+            
+            Section {
+                HStack {
+                    Spacer()
+                    #if DEBUG
+                    VStack(spacing: 2) {
+                        Text("Development Build")
+                        if let path = Bundle.main.executablePath,
+                           let attr = try? FileManager.default.attributesOfItem(atPath: path),
+                           let date = attr[.modificationDate] as? Date {
+                            Text("Built: \(date.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.caption2)
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    #else
+                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    #endif
+                    Spacer()
+                }
+            }
+            .listRowBackground(Color.clear)
         }
         .formStyle(.grouped)
         .alert("Factory Reset", isPresented: $showingResetAlert) {

@@ -9,6 +9,19 @@ EXPORT_PATH="$BUILD_DIR/Export"
 PLIST_PATH="$DIR/ExportOptions.plist"
 DMG_PATH="$BUILD_DIR/Pastelet.dmg"
 
+# 0. Check for version argument
+if [ -n "$1" ]; then
+    VERSION="$1"
+    echo "Setting version to $VERSION..."
+    # Update MARKETING_VERSION in project.pbxproj
+    sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/g" "$PROJECT_ROOT/Pastelet.xcodeproj/project.pbxproj"
+    
+    # Update DMG name
+    DMG_PATH="$BUILD_DIR/Pastelet-$VERSION.dmg"
+else
+    echo "No version specified. Using current project version."
+fi
+
 # Check for create-dmg
 if ! command -v create-dmg &> /dev/null; then
     echo "Error: create-dmg is not installed. Please install it using 'brew install create-dmg'."
