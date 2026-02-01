@@ -235,8 +235,10 @@ class AppWindowManager: NSObject, ObservableObject {
         clearItem.target = self
         menu.addItem(clearItem)
         
-        // 3. Activate App & Pop Up
-        NSApp.activate(ignoringOtherApps: true)
+        // 3. Pop Up Menu
+        // Note: We deliberately do NOT call NSApp.activate() here. 
+        // Activating the app brings all windows (like Settings) to the front, which interrupts the user's context.
+        // LSUIElement apps can display popUp menus without full activation, and NSMenu handles its own event loop.
         if !menu.popUp(positioning: nil, at: location, in: nil) {
             NSApp.hide(nil)
         }
