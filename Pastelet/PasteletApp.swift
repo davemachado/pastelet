@@ -26,18 +26,14 @@ struct PasteletApp: App {
     
     var body: some Scene {
         MenuBarExtra("Pastelet", systemImage: "clipboard") {
-            PasteletMenuView(clipboardManager: clipboardManager)
-        }
-        
-        Settings {
-            SettingsView(clipboardManager: clipboardManager, snippetManager: snippetManager)
+            PasteletMenuView(clipboardManager: clipboardManager, windowManager: windowManager)
         }
     }
 }
 
 struct PasteletMenuView: View {
     @ObservedObject var clipboardManager: ClipboardManager
-    @Environment(\.openSettings) var openSettings
+    @ObservedObject var windowManager: AppWindowManager
     
     var body: some View {
         // Show recent history (limit to top 15)
@@ -58,8 +54,7 @@ struct PasteletMenuView: View {
         }
         
         Button("Settings...") {
-            NSApp.activate(ignoringOtherApps: true)
-            openSettings()
+            windowManager.openSettings()
         }
         
         Button("Clear History") {

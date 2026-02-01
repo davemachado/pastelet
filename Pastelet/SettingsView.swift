@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject var clipboardManager: ClipboardManager // Added dependency
@@ -189,6 +190,13 @@ struct ExclusionSettingsView: View {
                     }
                     .disabled(selectedRunningApp == nil)
                     .padding(.top)
+                    
+                    Divider()
+                        .padding(.vertical)
+                    
+                    Button("Browse Applications...") {
+                         browseForApp()
+                    }
                 }
                 .padding()
                 .frame(width: 250)
@@ -201,5 +209,23 @@ struct ExclusionSettingsView: View {
     
     func refreshRunningApps() {
         runningApps = manager.getRunningApplications()
+    }
+    
+    private func browseForApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                if let bundle = Bundle(url: url),
+                   let bundleID = bundle.bundleIdentifier {
+                    manager.addExclusion(bundleID)
+                }
+            }
+        }
     }
 }

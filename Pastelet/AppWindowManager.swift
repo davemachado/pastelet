@@ -10,6 +10,8 @@ class AppWindowManager: NSObject, ObservableObject {
     
     // Window Controllers
     private var permissionsWindowController: NSWindowController?
+    private var settingsWindowController: NSWindowController?
+
 
     init(clipboardManager: ClipboardManager, snippetManager: SnippetManager) {
         self.clipboardManager = clipboardManager
@@ -64,6 +66,29 @@ class AppWindowManager: NSObject, ObservableObject {
         permissionsWindowController?.window?.makeKeyAndOrderFront(nil)
     }
     
+    func openSettings() {
+        if settingsWindowController == nil {
+            let contentView = SettingsView(clipboardManager: clipboardManager, snippetManager: snippetManager)
+            let hostingController = NSHostingController(rootView: contentView)
+            
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 700, height: 450),
+                styleMask: [.titled, .closable, .miniaturizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.center()
+            window.title = "Pastelet Settings"
+            window.contentViewController = hostingController
+            
+            settingsWindowController = NSWindowController(window: window)
+        }
+        
+        NSApp.activate(ignoringOtherApps: true)
+        settingsWindowController?.showWindow(nil)
+        settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
     func toggleHistory() {
         // Trigger the native Context Menu popup
         popUpHistoryMenu()
