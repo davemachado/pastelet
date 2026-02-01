@@ -18,6 +18,12 @@ struct SettingsView: View {
                     Label("Snippets", systemImage: "list.bullet.clipboard")
                 }
                 .tag("snippets")
+            
+            ExclusionSettingsView(manager: clipboardManager.appExclusionManager)
+                .tabItem {
+                    Label("Exclusions", systemImage: "xmark.circle")
+                }
+                .tag("exclusions")
         }
         .frame(width: 700, height: 450)
     }
@@ -93,5 +99,107 @@ struct GeneralSettingsView: View {
         } message: {
             Text("This will generate a new encryption key and re-encrypt your current history. Previous backups if any may become unreadable.")
         }
+    }
+}
+
+struct ExclusionSettingsView: View {
+    @ObservedObject var manager: AppExclusionManager
+    @State private var selectedRunningApp: RunningApp?
+    @State private var runningApps: [RunningApp] = []
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(alignment: .leading) {
+                Text("App Exclusions")
+                    .font(.headline)
+                Text("Pastelet will not record clipboard history from these applications.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color(nsColor: .controlBackgroundColor))
+            
+            Divider()
+            
+            HStack(spacing: 0) {
+                // Left: Excluded List
+                List {
+                    if manager.excludedBundleIDs.isEmpty {
+                        Text("No excluded apps")
+                            .foregroundColor(.secondary)
+                            .italic()
+                    }
+                    
+                    ForEach(Array(manager.excludedBundleIDs).sorted(), id: \.self) { bundleID in
+                        HStack {
+                            if let app = runningApps.first(where: { $0.id == bundleID }), let icon = app.icon {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                            } else {
+                                Image(systemName: "app.dashed")
+                            }
+                            
+                            // Try to find name, otherwise show ID
+                            Text(runningApps.first(where: { $0.id == bundleID })?.name ?? bundleID)
+                            Spacer()
+                            Button {
+                                manager.removeExclusion(bundleID)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .frame(minWidth: 200)
+                
+                Divider()
+                
+                // Right: Add New
+                VStack(alignment: .leading) {
+                    Text("Add Exclusion")
+                        .font(.headline)
+                        .padding(.bottom, 5)
+                    
+                    Text("Select a running application to exclude:")
+                        .font(.caption)
+                    
+                    List(runningApps, id: \.id, selection: $selectedRunningApp) { app in
+                        HStack {
+                            if let icon = app.icon {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                            }
+                            Text(app.name)
+                        }
+                        .tag(app) // Helper for selection if using List selection
+                    }
+                    .listStyle(.inset)
+                    
+                    Button("Exclude Selected") {
+                        if let app = selectedRunningApp {
+                            manager.addExclusion(app.id)
+                            selectedRunningApp = nil
+                        }
+                    }
+                    .disabled(selectedRunningApp == nil)
+                    .padding(.top)
+                }
+                .padding()
+                .frame(width: 250)
+            }
+        }
+        .onAppear {
+            refreshRunningApps()
+        }
+    }
+    
+    func refreshRunningApps() {
+        runningApps = manager.getRunningApplications()
     }
 }

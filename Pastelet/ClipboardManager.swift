@@ -35,6 +35,7 @@ class ClipboardManager: ObservableObject {
     
     private let encryptionService = EncryptionService()
     private let imageStorageService = ImageStorageService()
+    let appExclusionManager = AppExclusionManager()
     
     init() {
         self.lastChangeCount = pasteboard.changeCount
@@ -52,6 +53,15 @@ class ClipboardManager: ObservableObject {
     private func checkForChanges() {
         if pasteboard.changeCount != lastChangeCount {
             lastChangeCount = pasteboard.changeCount
+            
+            // Check for Excluded App
+            if let frontApp = NSWorkspace.shared.frontmostApplication,
+               let bundleID = frontApp.bundleIdentifier {
+                if appExclusionManager.isExcluded(bundleID: bundleID) {
+                    print("Clipboard change ignored from excluded app: \(bundleID)")
+                    return
+                }
+            }
             
             // 1. Check for Image
             if let image = NSImage(pasteboard: pasteboard) {
