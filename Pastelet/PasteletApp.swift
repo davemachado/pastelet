@@ -26,34 +26,44 @@ struct PasteletApp: App {
     
     var body: some Scene {
         MenuBarExtra("Pastelet", systemImage: "clipboard") {
-            // Show recent history (limit to top 15)
-            ForEach(clipboardManager.history.prefix(15)) { item in
-                Button {
-                    PasteHelper.paste(item: item)
-                } label: {
-                    Text(item.content.prefix(30) + (item.content.count > 30 ? "..." : ""))
-                }
-            }
-            
-            if !clipboardManager.history.isEmpty {
-                Divider()
-            }
-            
-            SettingsLink {
-                Text("Settings...")
-            }
-            
-            Button("Clear History") {
-                clipboardManager.history.removeAll()
-            }
-            Divider()
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
+            PasteletMenuView(clipboardManager: clipboardManager)
         }
         
         Settings {
             SettingsView(clipboardManager: clipboardManager, snippetManager: snippetManager)
+        }
+    }
+}
+
+struct PasteletMenuView: View {
+    @ObservedObject var clipboardManager: ClipboardManager
+    @Environment(\.openSettings) var openSettings
+    
+    var body: some View {
+        // Show recent history (limit to top 15)
+        ForEach(clipboardManager.history.prefix(15)) { item in
+            Button {
+                PasteHelper.paste(item: item)
+            } label: {
+                Text(item.content.prefix(30) + (item.content.count > 30 ? "..." : ""))
+            }
+        }
+        
+        if !clipboardManager.history.isEmpty {
+            Divider()
+        }
+        
+        Button("Settings...") {
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        }
+        
+        Button("Clear History") {
+            clipboardManager.history.removeAll()
+        }
+        Divider()
+        Button("Quit") {
+            NSApplication.shared.terminate(nil)
         }
     }
 }
