@@ -23,7 +23,7 @@ struct HistoryView: View {
                         }
                     }
                 }
-                .onChange(of: selectedIndex) { newIndex in
+                .onChange(of: selectedIndex) { _, newIndex in
                     withAnimation {
                         proxy.scrollTo(newIndex, anchor: .center)
                     }

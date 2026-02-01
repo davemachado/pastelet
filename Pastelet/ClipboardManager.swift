@@ -91,11 +91,10 @@ class ClipboardManager: ObservableObject {
         // 1. Move to pasteboard
         pasteboard.clearContents()
         pasteboard.setString(item.content, forType: .string)
-        
-        // 2. Move item to top of history (optional, or just leave as is)
-        // Let's move it to top?
-        // if let index = history.firstIndex(where: { $0.id == item.id }) {
-        //     history.move(fromOffsets: IndexSet(integer: index), toOffset: 0)
-        // }
+    }
+    
+    func clearHistory() {
+        history.removeAll()
+        saveHistory()
     }
 }

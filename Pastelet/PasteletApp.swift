@@ -53,7 +53,7 @@ struct PasteletApp: App {
         }
         
         Settings {
-            SettingsView(snippetManager: snippetManager)
+            SettingsView(clipboardManager: clipboardManager, snippetManager: snippetManager)
         }
     }
 }

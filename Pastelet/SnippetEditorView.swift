@@ -163,7 +163,7 @@ struct SnippetFolderDetailView: View {
                 .listStyle(.inset)
                 .frame(minHeight: 120)
                 // Clear renaming state when selection changes elsewhere
-                .onChange(of: selectedSnippetId) { _ in
+                .onChange(of: selectedSnippetId) {
                     renamingSnippetId = nil
                 }
             }

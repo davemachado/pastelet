@@ -60,6 +60,14 @@ class SnippetManager: ObservableObject {
         }
     }
     
+    func resetToFactorySettings() {
+        folders.removeAll()
+        // Clear from disk immediately
+        UserDefaults.standard.removeObject(forKey: storageKey)
+        // Re-seed
+        seedExamples()
+    }
+    
     private func saveSnippets() {
         if let encoded = try? JSONEncoder().encode(folders) {
             UserDefaults.standard.set(encoded, forKey: storageKey)

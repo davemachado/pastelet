@@ -1,12 +1,13 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @ObservedObject var clipboardManager: ClipboardManager // Added dependency
     @ObservedObject var snippetManager: SnippetManager
     @State private var selectedTab: String = "general"
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            GeneralSettingsView()
+            GeneralSettingsView(clipboardManager: clipboardManager, snippetManager: snippetManager)
                 .tabItem {
                     Label("General", systemImage: "gear")
                 }
@@ -23,16 +24,40 @@ struct SettingsView: View {
 }
 
 struct GeneralSettingsView: View {
+    @ObservedObject var clipboardManager: ClipboardManager
+    @ObservedObject var snippetManager: SnippetManager
+    @State private var showingResetAlert = false
+    
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "gear")
-                .font(.system(size: 50))
-                .foregroundColor(.secondary)
-            Text("General Settings")
-                .font(.title)
-            Text("Configuration options for History size and excluded apps will appear here.")
-                .foregroundColor(.secondary)
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Application Reset")
+                        .font(.headline)
+                    Text("Resetting the application will delete all custom snippets and clear your clipboard history. This action cannot be undone.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Button(role: .destructive) {
+                        showingResetAlert = true
+                    } label: {
+                        Label("Factory Reset Pastelet", systemImage: "exclamationmark.triangle")
+                    }
+                    .controlSize(.large)
+                }
+                .padding(.vertical, 8)
+            }
         }
-        .padding()
+        .formStyle(.grouped)
+        .alert("Factory Reset", isPresented: $showingResetAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset Everything", role: .destructive) {
+                // Perform Reset
+                clipboardManager.clearHistory()
+                snippetManager.resetToFactorySettings()
+            }
+        } message: {
+            Text("Are you sure? All your snippets and history will be permanently deleted.")
+        }
     }
 }
