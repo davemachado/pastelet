@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Pastelet/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" alt="Pastelet Logo" width="128">
+</p>
+
 # Pastelet
 
 **Pastelet** is a secure, lightweight, and native clipboard manager for macOS, built with SwiftUI. It keeps your clipboard history accessible while prioritizing privacy and security through local encryption.
